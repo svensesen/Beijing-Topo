@@ -10,7 +10,7 @@ presets_list = ["Empty", "Small"]
 app = Dash()
 
 app.layout = html.Div([
-    dcc.RadioItems(options=["Presets", "Custom"], value="Presets", id="data_type_radio",inline=True),
+    dcc.RadioItems(options=["Presets", "Custom"], value="Presets", id="data_type_radio", style={"display": "inline-block"}, inline=True),
 
     html.Div([html.Div("Preset:", style={"display": "inline-block"}),
     dcc.Dropdown(options=presets_list, value=presets_list[0], id="preset_dropdown", 
