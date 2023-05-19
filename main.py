@@ -1,10 +1,10 @@
 from dash import Dash, html, dcc, Input, Output, State
 import pandas as pd
 
-user_list = ["0", "1", "2"] #list(set(import_df["user"])) # List of all users 
-transportation_list = ["Walk", "Bike", "Bus"] # List of all transportation"s TBI (should get this from the df)
+user_list = list(range(183)) #list(set(import_df["user"])) # List of all users 
+transportation_list = ['train', 'taxi', 'walk', 'bus', 'subway', 'airplane', 'car', 'bike', 'motorcycle', 'run', 'boat'] # List of all transportation's
 graphing_method_list = ["Angle"] # List of all graphing methods TBI
-presets_list = ["Empty", "Small"]
+presets_list = ["very_short", "short", "medium", "car", "walk", "PT"] # List of all presets
 
 # Creates the dash app
 app = Dash()
@@ -64,13 +64,10 @@ def active_filter(data_type):
 )
 def run(dummy, data_type, preset, user, transportation):
     if data_type == "Presets":
-        if preset == "empty":
-            df = pd.DataFrame()
-        elif preset == "Small":
-            df = pd.read_csv("small")
+        df = pd.read_csv(f"presets/{preset}")
 
     elif data_type == "Custom":
-        df = pd.read_csv("full_data.csv")
+        df = pd.read_csv("presets/full_data.csv")
 
         if user != "All":
             df = df[df["user"] == user]
