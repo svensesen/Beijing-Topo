@@ -1,5 +1,6 @@
 # Note each function starting with _ should NOT be manually invoked
 from warnings import warn
+from math import atan2, pi, sin, cos, sqrt, pow
 
 graph_counter = 0
 vertex_counter = 0
@@ -7,13 +8,14 @@ edge_counter = 0
 
 class Graph:
     def __init__(self, warnings = False):
-        self.vertices = set()
-        self.edges = set()
-        self.warnings = warnings
-
         global graph_counter
         self.id = graph_counter
         graph_counter += 1
+
+        self.warnings = warnings
+
+        self.vertices = set()
+        self.edges = set()
 
     def __repr__(self):
         return "<Graph>"
@@ -76,43 +78,46 @@ class Graph:
 
 
 class Vertex:
-    def __init__(self, longitude, latitude, altitude, graph = None, edges = None, warnings = False):
-        self.longitude = longitude
-        self.latitude = latitude
-        self.altitude = altitude
-
-        self.graph = graph
+    def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False):
+        global vertex_counter
+        self.id = vertex_counter
+        vertex_counter += 1
 
         self.warnings = warnings
+
+        self.latitude = latitude
+        self.longitude = longitude
+        self.altitude = altitude
+
+        self.graph = None
 
         self.edges = set()
         if edges != None:
             self.set_edges(edges)
-        
-        global vertex_counter
-        self.id = vertex_counter
-        vertex_counter += 1
-    
+
+        if graph != None:
+            self.set_graph(graph)
+
     def __repr__(self): 
-        return f"<Vertex: {self.longitude},{self.latitude},{self.altitude}>"
+        return f"<Vertex: {self.latitude},{self.longitude},{self.altitude}>"
     
     def __hash__(self):
         return self.id
     
     def __eq__(self, other):
-        return (self.longitude == other.longitude) and (self.latitude == other.latitude)
+        return  (self.latitude == other.latitude) and (self.longitude == other.longitude)
 
     def __lt__(self, other):
-        return (self.longitude + self.latitude) < (other.longitude + other.latitude)
+        return (self.latitude + self.longitude) < (other.latitude + other.longitude)
 
     def __le__(self, other):
-        return (self.longitude + self.latitude) <= (other.longitude + other.latitude)
+        return (self.latitude + self.longitude) <= (other.latitude + other.longitude)
     
     def __gt__(self, other):
-        return (self.longitude + self.latitude) > (other.longitude + other.latitude)
+        return (self.latitude + self.longitude) > (other.latitude + other.longitude)
 
     def __ge__(self, other):
-        return (self.longitude + self.latitude) >= (other.longitude + other.latitude)
+        return (self.latitude + self.longitude) >= (other.latitude + other.longitude)
     
     def add_edges(self, edges, called = False):
         if not isinstance(edges, set):
@@ -176,25 +181,39 @@ class Vertex:
                 self.graph.remove_vertices(self, called = True)
             
             if graph != None:
-                self.graph.add_vertices(self, called = True)
+                graph.add_vertices(self, called = True)
         
         self.graph = graph
 
         for edge in self.edges:
             edge._set_graph(self.graph)
 
+    def angle_to_vertex(self, vertex):
+        return calculate_angle(self.latitude, vertex.latitude, self.longitude, vertex.longitude)
+    
+    def angle_to_point(self, latitude, longitude):
+        return calculate_angle(self.latitude, latitude, self.longitude, longitude)
+    
+    def distance_to_vertex(self, vertex):
+        return calculate_distance(self.latitude, vertex.latitude, self.longitude, vertex.longitude)
+    
+    def distance_to_point(self, latitude, longitude):
+        return calculate_distance(self.latitude, latitude, self.longitude, longitude)
+
+
         
 
 class Edge:
-    def __init__(self, graph = None, vertices = None, warnings = False):
+    def __init__(self, vertices = None, warnings = False):
         global edge_counter
         self.id = edge_counter
         edge_counter += 1
 
-        self.vertices = set()
-        self.graph = graph
         self.warnings = warnings
 
+        self.vertices = set()
+        self.graph = None
+        
         if vertices != None:
             self.add_vertices(vertices)
         
@@ -259,6 +278,83 @@ class Edge:
     
     def _set_graph(self, graph):
         self.graph = graph
+    
+    def intermediate_point(self, fraction = 0.5):
+        if len(self.vertices) != 2:
+            return -1, -1
+        
+        v0 = min(self.vertices)
+        v1 = max(self.vertices)
+
+        return calculate_intermediate_point(v0.latitude, v1.latitude, v0.longitude, v1.longitude, fraction=fraction)
+
+    @property
+    def length(self):
+        if len(self.vertices) != 2:
+            return -1
+
+        v0 = min(self.vertices)
+        v1 = max(self.vertices)
+
+        return calculate_distance(v0.latitude, v1.latitude, v0.longitude, v1.longitude)
+        
+    @property
+    def angle(self):
+        if len(self.vertices) != 2:
+            return -1
+        
+        v0 = min(self.vertices)
+        v1 = max(self.vertices)
+
+        return calculate_angle(v0.latitude, v1.latitude, v0.longitude, v1.longitude)
+
+
+def calculate_distance(latitude0, latitude1, longitude0, longitude1):
+        R = 6371009
+        ph0 = latitude0 * pi/180
+        ph1 = latitude1 * pi/180
+        dlat = (latitude1 - latitude0) * pi/180
+        dlong = (longitude1 - longitude0) * pi/180
+
+        a = sin(dlat/2) * sin(dlat/2) + cos(ph0) * cos(ph1) * sin(dlong/2) * sin(dlong/2)
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+
+        d = R * c
+
+        return d
+
+def calculate_angle(latitude0, latitude1, longitude0, longitude1):
+    y = sin(longitude1-longitude0) * cos(latitude1)
+    x = cos(latitude0) * sin(latitude1) - sin(latitude0) * cos(latitude1) * cos(longitude1 - longitude0)
+    ph = atan2(y, x)
+    b = (ph*180/pi + 360) % 360
+
+    return b
+
+def calculate_intermediate_point(latitude0, latitude1, longitude0, longitude1, fraction = 0.5):
+    R = 6371009
+    d = calculate_distance(latitude0, latitude1, longitude0, longitude1)
+    delta = d/R
+
+    a = sin((1-fraction) * delta) / sin(delta)
+    b = sin(fraction * delta) / sin(delta)
+    x = a * cos(latitude0) * cos(longitude0) + b * cos(latitude1) * cos(longitude1)
+    y = a * cos(latitude0) * sin(longitude0) + b * cos(latitude1) * sin(longitude1)
+    z = a * sin(latitude0) + b * sin(latitude1)
+    latitude2 = atan2(z, sqrt(pow(x, 2) + pow(y, 2)))
+    longitude2 = atan2(y, x)
+
+    return latitude2, longitude2 
+
+
+def calculate_halfway_point(latitude0, latitude1, longitude0, longitude1):
+    Bx = cos(latitude1) * cos(longitude1-longitude0)
+    By = cos(latitude1) * sin(longitude1-longitude0)
+    latitude2 = atan2(sin(latitude0) + sin(latitude1), sqrt(pow((cos(latitude0) + Bx),2) + pow(By, 2)))
+    longitude2 = longitude0 + atan2(By, cos(latitude0) + Bx)
+
+    return latitude2, longitude2
+
     
 
         
