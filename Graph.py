@@ -70,6 +70,33 @@ class Graph:
         if not called:
             vertex.set_graph(None, called = True)
 
+    def closest_vertex_to_point(self, latitude, longitude):        
+        closest_vertex = None
+        closest_distance = float("inf")
+        for vertex in self.graph.vertices:
+            distance = vertex.distance_to_point(latitude, longitude)
+
+            if distance < closest_distance:
+                closest_vertex = vertex
+                closest_distance = distance
+
+        return closest_vertex
+    
+    def vertices_in_square(self, latitude0, latitude1, longitude0, longitude1):
+        if latitude1 < latitude0:
+            latitude0, latitude1 = latitude1, latitude0
+
+        if longitude1 < longitude0:
+            longitude0, longitude1 = longitude1, longitude0
+
+        found_vertices = set()
+        for vertex in self.graph.vertices:
+            if (vertex.latitude >= latitude0) and (vertex.latitude <= latitude1) and \
+            (vertex.longitude >= longitude0) and (vertex.longitude <= longitude1):
+                found_vertices.add(vertex)
+        
+        return found_vertices
+
     def _add_edges(self, edges):
         self.edges.update(edges)
     
@@ -199,7 +226,21 @@ class Vertex:
     
     def distance_to_point(self, latitude, longitude):
         return calculate_distance(self.latitude, latitude, self.longitude, longitude)
+    
+    def closest_vertex(self):
+        if self.graph == None:
+            return None
+        
+        closest_vertex = None
+        closest_distance = float("inf")
+        for vertex in self.graph.vertices:
+            distance = self.distance_to_vertex(vertex)
 
+            if distance < closest_distance:
+                closest_vertex = vertex
+                closest_distance = distance
+
+        return closest_vertex    
 
         
 
