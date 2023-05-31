@@ -102,6 +102,13 @@ class Graph:
     
     def _remove_edges(self, edges):
         self.edges = self.edges.difference(edges)
+        
+    def remove_unconnected_vertices(self):
+        vertices_copy = self.vertices
+        for vertex in self.vertices:
+            if len(vertex.edges) == 0: #perhaps vertex.edges == None?
+                vertices_copy.remove(vertex)
+        self.vertices = vertices_copy
 
 
 class Vertex:
