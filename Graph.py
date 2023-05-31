@@ -282,7 +282,7 @@ class Edge:
             if not isinstance(value, Vertex):
                 raise TypeError(f"Input for vertices contained a non-Vertex, namely {type(value)}")
         
-        if len(self.vertices) + len(vertices) != 2:
+        if len(self.vertices) + len(vertices) > 2:
             raise ValueError(f"An edge may have at most 2 vertices, has {len(self.vertices)}, adding {len(vertices)}")
         
         if self.warnings and self.vertices.intersection(vertices):
