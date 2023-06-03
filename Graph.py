@@ -1,6 +1,6 @@
 # Note each function starting with _ should NOT be manually invoked
 from warnings import warn
-from math import atan2, pi, sin, cos, sqrt, pow
+from math import atan2, pi, sin, cos, sqrt, pow, degrees
 
 graph_counter = 0
 vertex_counter = 0
@@ -104,11 +104,7 @@ class Graph:
         self.edges = self.edges.difference(edges)
         
     def remove_unconnected_vertices(self):
-        vertices_copy = self.vertices
-        for vertex in self.vertices:
-            if len(vertex.edges) == 0: #perhaps vertex.edges == None?
-                vertices_copy.remove(vertex)
-        self.vertices = vertices_copy
+        self.vertices = {vertex for vertex in self.vertices if len(vertex.edges) != 0}
 
 
 class Vertex:
@@ -403,6 +399,14 @@ def calculate_halfway_point(latitude0, latitude1, longitude0, longitude1):
 
     return latitude2, longitude2
 
+
+
+def short_angle(latitude0, latitude1, longitude0, longitude1):
+    y = abs(latitude0 - latitude1)
+    x = abs(longitude0 - longitude1)
+    b = degrees(atan2(y, x))
+
+    return b
     
 
         
