@@ -246,33 +246,7 @@ class Vertex:
 
         return closest_vertex    
 
-def plot_edges(vertex_list, base = None, marker = ',', alti_group: bool = False):
-    #base = the base image to plot over. path to a png (preferably)
-    #marker = the marker to be used while plotting, default = pixel
-    #alti_group = whether you wanna color by altitude or not (bool)
-    
-    
-    if base:
-       im = plt.imread(base) #needs to be path to image, preferably png
-       implot = plt.imshow(im) 
-    if alti_group:
-        dict_colors = {}
-        alt_groups = set([i.altitude for i in vertex_list])
-        cntr = 0
-    
-        for group in alt_groups:
-            dict_colors[group] = mcolors.cnames.keys()[cntr]
-            cntr += 1
-    lat, lon, alt  = [], [], []
-    for v in vertex_list:
-       lat.append(v.latitude)
-       lon.append(v.longitude)
-       alt.append(v.altitude)
-       #if alt:
-           #plt.scatter(lat, lon, alt, marker=marker)
-       #else:
-    plt.scatter(lat, lon, c = alt.map(dict_colors), marker = marker)
-       
+
        
 
 class Edge:
@@ -437,3 +411,34 @@ def short_angle(latitude0, latitude1, longitude0, longitude1):
     return b
     
 
+def plot_edges(vertex_list, base = None, marker = ',', alti_group: bool = False):
+    #vertex_list = a list of Vertex objects
+    #base = the base image to plot over. path to a png (preferably)
+    #marker = the marker to be used while plotting, default = pixel
+    #alti_group = whether you wanna color by altitude or not (bool)
+    
+    
+    if base:
+       im = plt.imread(base) #needs to be path to image, preferably png
+       implot = plt.imshow(im) 
+    if alti_group:
+        dict_colors = {}
+        alt_groups = set([i.altitude for i in vertex_list])
+        cntr = 0
+    
+        for group in alt_groups:
+            dict_colors[group] = mcolors.cnames.keys()[cntr]
+            cntr += 1
+    lat, lon, alt  = [], [], []
+    for v in vertex_list:
+       lat.append(v.latitude)
+       lon.append(v.longitude)
+       alt.append(v.altitude)
+       #if alt:
+           #plt.scatter(lat, lon, alt, marker=marker)
+       #else:
+    if alti_group:
+        plt.scatter(lat, lon, c = alt.map(dict_colors), marker = marker)
+        plt.legend()
+    else:
+        plt.scatter(lat, lon, marker = marker)
