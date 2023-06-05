@@ -1,15 +1,15 @@
 import pandas as pd
 import numpy as np
 import os 
+import matplotlib.plot as plt
+
 def plotter(data:dict, marker = 'o-'):
   for key in data.keys():
     for point in data[key]:
       plt.scatter(point[0], point[1], marker = marker)
 
 def data_plot(folder:None):
-  import pandas as pd
-  import numpy as np
-  import os
+
   
   if folder:
     path = os.listdir(folder)
