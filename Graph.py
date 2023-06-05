@@ -1,7 +1,7 @@
 # Note each function starting with _ should NOT be manually invoked
 from warnings import warn
 from math import atan2, pi, sin, cos, sqrt, pow, degrees
-import matplotlib.plot as plt
+import matplotlib.pyplot as plt
 
 graph_counter = 0
 vertex_counter = 0
