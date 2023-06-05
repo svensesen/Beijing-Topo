@@ -246,9 +246,6 @@ class Vertex:
 
         return closest_vertex    
 
-
-       
-
 class Edge:
     def __init__(self, vertices = None, warnings = False):
         global edge_counter
@@ -411,13 +408,14 @@ def short_angle(latitude0, latitude1, longitude0, longitude1):
     return b
     
 
-def plot_edges(vertex_list, base = None, marker = ',', alti_group: bool = False):
-    #vertex_list = a list of Vertex objects
+def plot_sus(lis, base = None, marker = ',', alti_group: bool = False):
+    #lis = a list of Vertex and Edge objects
     #base = the base image to plot over. path to a png (preferably)
     #marker = the marker to be used while plotting, default = pixel
     #alti_group = whether you wanna color by altitude or not (bool)
-    
-    
+    get_line_x = lambda edge: np.array([(list(edge.vertices)[i][0], list(edge.vertices)[i+1][0]) for i in range(0, len(edge.vertices)-1)])
+    get_line_y = lambda edge: np.array([(list(edge.vertices)[i][1], list(edge.vertices)[i+1][1]) for i in range(0, len(edge.vertices)-1)])
+
     if base:
        im = plt.imread(base) #needs to be path to image, preferably png
        implot = plt.imshow(im) 
@@ -430,15 +428,22 @@ def plot_edges(vertex_list, base = None, marker = ',', alti_group: bool = False)
             dict_colors[group] = mcolors.cnames.keys()[cntr]
             cntr += 1
     lat, lon, alt  = [], [], []
-    for v in vertex_list:
-       lat.append(v.latitude)
-       lon.append(v.longitude)
-       alt.append(v.altitude)
+    for v in lis:
+        if type(v) == Vertex:
+           lat.append(v.latitude)
+           lon.append(v.longitude)
+           alt.append(v.altitude)
        #if alt:
            #plt.scatter(lat, lon, alt, marker=marker)
        #else:
-    if alti_group:
-        plt.scatter(lat, lon, c = alt.map(dict_colors), marker = marker)
-        plt.legend()
-    else:
-        plt.scatter(lat, lon, marker = marker)
+           if alti_group:
+               plt.scatter(lat, lon, c = alt.map(dict_colors), marker = marker)
+               plt.legend()
+           else:
+               plt.scatter(lat, lon, marker = marker)
+        elif type(v) == Edge:
+            x = get_line_x(v)
+            y = get_line_y(v)
+            
+            for i in range(len(x)):
+                plt.plot(x[i], y[i], 'ro-')
