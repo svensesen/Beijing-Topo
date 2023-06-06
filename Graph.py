@@ -2,6 +2,7 @@
 from warnings import warn
 from math import atan2, pi, sin, cos, sqrt, pow, degrees
 import matplotlib.pyplot as plt
+import pickle
 
 graph_counter = 0
 vertex_counter = 0
@@ -106,6 +107,10 @@ class Graph:
         
     def remove_unconnected_vertices(self):
         self.vertices = {vertex for vertex in self.vertices if len(vertex.edges) != 0}
+        
+    def save(self, filename: str): #works, but not loading yet
+        with open(filename, 'wb') as outp:
+            pickle.dump(self, outp, -1)
 
     
 class Vertex:
