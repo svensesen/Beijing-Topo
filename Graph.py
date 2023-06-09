@@ -249,7 +249,16 @@ class Vertex:
                 closest_vertex = vertex
                 closest_distance = distance
 
-        return closest_vertex    
+        return closest_vertex 
+
+    def distance_to_edge(self, edge):
+        if len(edge.vertices) != 2:
+            return -1
+        
+        v0 = min(edge.vertices)
+        v1 = max(edge.vertices)
+        return calculate_distance_point_line(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
+                                             self.latitude, self.longitude)
 
 class Edge:
     def __init__(self, vertices = None, warnings = False):
@@ -326,15 +335,24 @@ class Edge:
     
     def _set_graph(self, graph):
         self.graph = graph
-    
-    def intermediate_point(self, fraction = 0.5):
+
+    def distance_to_vertex(self, vertex):
         if len(self.vertices) != 2:
-            return -1, -1
-        
+            return -1
+
         v0 = min(self.vertices)
         v1 = max(self.vertices)
+        return calculate_distance_point_line(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
+                                             vertex.latitude, vertex.longitude)
+    
+    # def intermediate_point(self, fraction = 0.5):
+    #     if len(self.vertices) != 2:
+    #         return -1, -1
+        
+    #     v0 = min(self.vertices)
+    #     v1 = max(self.vertices)
 
-        return calculate_intermediate_point(v0.latitude, v1.latitude, v0.longitude, v1.longitude, fraction=fraction)
+    #     return calculate_intermediate_point(v0.latitude, v1.latitude, v0.longitude, v1.longitude, fraction=fraction)
 
     @property
     def length(self):
@@ -371,6 +389,7 @@ def calculate_distance(latitude0, latitude1, longitude0, longitude1):
 
         return d
 
+
 def calculate_angle(latitude0, latitude1, longitude0, longitude1):
     y = sin(longitude1-longitude0) * cos(latitude1)
     x = cos(latitude0) * sin(latitude1) - sin(latitude0) * cos(latitude1) * cos(longitude1 - longitude0)
@@ -379,30 +398,30 @@ def calculate_angle(latitude0, latitude1, longitude0, longitude1):
 
     return b
 
-def calculate_intermediate_point(latitude0, latitude1, longitude0, longitude1, fraction = 0.5):
-    R = 6371009
-    d = calculate_distance(latitude0, latitude1, longitude0, longitude1)
-    delta = d/R
 
-    a = sin((1-fraction) * delta) / sin(delta)
-    b = sin(fraction * delta) / sin(delta)
-    x = a * cos(latitude0) * cos(longitude0) + b * cos(latitude1) * cos(longitude1)
-    y = a * cos(latitude0) * sin(longitude0) + b * cos(latitude1) * sin(longitude1)
-    z = a * sin(latitude0) + b * sin(latitude1)
-    latitude2 = atan2(z, sqrt(pow(x, 2) + pow(y, 2)))
-    longitude2 = atan2(y, x)
+# def calculate_intermediate_point(latitude0, latitude1, longitude0, longitude1, fraction = 0.5):
+#     R = 6371009
+#     d = calculate_distance(latitude0, latitude1, longitude0, longitude1)
+#     delta = d/R
 
-    return latitude2, longitude2 
+#     a = sin((1-fraction) * delta) / sin(delta)
+#     b = sin(fraction * delta) / sin(delta)
+#     x = a * cos(latitude0) * cos(longitude0) + b * cos(latitude1) * cos(longitude1)
+#     y = a * cos(latitude0) * sin(longitude0) + b * cos(latitude1) * sin(longitude1)
+#     z = a * sin(latitude0) + b * sin(latitude1)
+#     latitude2 = atan2(z, sqrt(pow(x, 2) + pow(y, 2)))
+#     longitude2 = atan2(y, x)
+
+#     return latitude2, longitude2 
 
 
-def calculate_halfway_point(latitude0, latitude1, longitude0, longitude1):
-    Bx = cos(latitude1) * cos(longitude1-longitude0)
-    By = cos(latitude1) * sin(longitude1-longitude0)
-    latitude2 = atan2(sin(latitude0) + sin(latitude1), sqrt(pow((cos(latitude0) + Bx),2) + pow(By, 2)))
-    longitude2 = longitude0 + atan2(By, cos(latitude0) + Bx)
+# def calculate_halfway_point(latitude0, latitude1, longitude0, longitude1):
+#     Bx = cos(latitude1) * cos(longitude1-longitude0)
+#     By = cos(latitude1) * sin(longitude1-longitude0)
+#     latitude2 = atan2(sin(latitude0) + sin(latitude1), sqrt(pow((cos(latitude0) + Bx),2) + pow(By, 2)))
+#     longitude2 = longitude0 + atan2(By, cos(latitude0) + Bx)
 
-    return latitude2, longitude2
-
+#     return latitude2, longitude2
 
 
 def short_angle(latitude0, latitude1, longitude0, longitude1):
@@ -412,6 +431,9 @@ def short_angle(latitude0, latitude1, longitude0, longitude1):
 
     return b
     
+
+def calculate_distance_point_line(x0, x1, y0, y1, px, py):
+    return abs((x1-x0)*(y0-py) - (x0-px)*(y1-y0))/sqrt(pow((x1-x0), 2) + pow((y1-y0), 2))
 
 def plot_sus(lis, base = None, marker = ',', alti_group: bool = False):
     #lis = a list of Vertex and Edge objects
