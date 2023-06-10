@@ -1,7 +1,9 @@
 # Note each function starting with _ should NOT be manually invoked
 from warnings import warn
 from math import atan2, pi, sin, cos, sqrt, pow, degrees
+from collections import deque
 import matplotlib.pyplot as plt
+
 import pickle
 
 graph_counter = 0
@@ -24,6 +26,47 @@ class Graph:
     
     def __hash__(self):
         return self.id
+    
+    def combine_graph(self, graph):
+        self.vertices.update(graph.vertices)
+        self.edges.update(graph.edges)
+
+    def merge_close_vertices(self, max_distance = 0.0001):
+        queue = deque(self.vertices)
+
+        # For each vertex we check
+        while len(queue) != 0:
+            cur_vertex = queue.popleft()
+            to_combine = set()
+
+            # For each other vertex check if it is close
+            for other_vertex in self.vertices:
+                if other_vertex != cur_vertex:
+                    distance = cur_vertex.short_distance_to_vertex(other_vertex)
+                    if distance <= max_distance:
+                        to_combine.add(other_vertex)
+            
+            # If there were close vertices combine them
+            if len(to_combine) > 0:
+                latitudes = [vertex.latitude for vertex in to_combine] + [vertex.latitude]
+                longitudes = [vertex.longitude for vertex in to_combine] + [vertex.longitude]
+
+                cur_vertex.latitude = sum(latitudes)/len(latitudes)
+                cur_vertex.longitude = sum(longitudes)/len(longitudes)
+
+                for vertex in to_combine: 
+                    for edge in vertex.edges:
+                        edge.remove_vertices(vertex)
+                        edge.add_vertices(cur_vertex)
+                    queue.remove(vertex)
+
+                self.vertices = self.vertices.difference(to_combine)
+    
+    def merge_vertices_to_edges(self):
+        for cur_vertex in self.vertices:
+            if 
+
+
     
     def add_vertices(self, vertices, called = False):
         if not isinstance(vertices, set):
@@ -141,7 +184,7 @@ class Vertex:
         return self.id
     
     def __eq__(self, other):
-        return  (self.latitude == other.latitude) and (self.longitude == other.longitude)
+        return self.id == other.id
 
     def __lt__(self, other):
         return (self.latitude + self.longitude) < (other.latitude + other.longitude)
@@ -236,6 +279,18 @@ class Vertex:
     def distance_to_point(self, latitude, longitude):
         return calculate_distance(self.latitude, latitude, self.longitude, longitude)
     
+    def short_angle_to_vertex(self, vertex):
+        return short_angle(self.latitude, vertex.latitude, self.longitude, vertex.longitude)
+    
+    def short_angle_to_point(self, latitude, longitude):
+        return short_angle(self.latitude, latitude, self.longitude, longitude)
+    
+    def short_distance_to_vertex(self, vertex):
+        return short_distance(self.latitude, vertex.latitude, self.longitude, vertex.longitude)
+    
+    def short_to_point(self, latitude, longitude):
+        return short_distance(self.latitude, latitude, self.longitude, longitude)
+    
     def closest_vertex(self):
         if self.graph == None:
             return None
@@ -251,7 +306,7 @@ class Vertex:
 
         return closest_vertex 
 
-    def distance_to_edge(self, edge):
+    def short_distance_to_edge(self, edge):
         if len(edge.vertices) != 2:
             return -1
         
@@ -336,7 +391,7 @@ class Edge:
     def _set_graph(self, graph):
         self.graph = graph
 
-    def distance_to_vertex(self, vertex):
+    def short_distance_to_vertex(self, vertex):
         if len(self.vertices) != 2:
             return -1
 
@@ -344,15 +399,6 @@ class Edge:
         v1 = max(self.vertices)
         return calculate_distance_point_line(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
                                              vertex.latitude, vertex.longitude)
-    
-    # def intermediate_point(self, fraction = 0.5):
-    #     if len(self.vertices) != 2:
-    #         return -1, -1
-        
-    #     v0 = min(self.vertices)
-    #     v1 = max(self.vertices)
-
-    #     return calculate_intermediate_point(v0.latitude, v1.latitude, v0.longitude, v1.longitude, fraction=fraction)
 
     @property
     def length(self):
@@ -399,41 +445,20 @@ def calculate_angle(latitude0, latitude1, longitude0, longitude1):
     return b
 
 
-# def calculate_intermediate_point(latitude0, latitude1, longitude0, longitude1, fraction = 0.5):
-#     R = 6371009
-#     d = calculate_distance(latitude0, latitude1, longitude0, longitude1)
-#     delta = d/R
-
-#     a = sin((1-fraction) * delta) / sin(delta)
-#     b = sin(fraction * delta) / sin(delta)
-#     x = a * cos(latitude0) * cos(longitude0) + b * cos(latitude1) * cos(longitude1)
-#     y = a * cos(latitude0) * sin(longitude0) + b * cos(latitude1) * sin(longitude1)
-#     z = a * sin(latitude0) + b * sin(latitude1)
-#     latitude2 = atan2(z, sqrt(pow(x, 2) + pow(y, 2)))
-#     longitude2 = atan2(y, x)
-
-#     return latitude2, longitude2 
-
-
-# def calculate_halfway_point(latitude0, latitude1, longitude0, longitude1):
-#     Bx = cos(latitude1) * cos(longitude1-longitude0)
-#     By = cos(latitude1) * sin(longitude1-longitude0)
-#     latitude2 = atan2(sin(latitude0) + sin(latitude1), sqrt(pow((cos(latitude0) + Bx),2) + pow(By, 2)))
-#     longitude2 = longitude0 + atan2(By, cos(latitude0) + Bx)
-
-#     return latitude2, longitude2
-
-
 def short_angle(latitude0, latitude1, longitude0, longitude1):
     y = abs(latitude0 - latitude1)
     x = abs(longitude0 - longitude1)
     b = degrees(atan2(y, x))
 
     return b
+
+def short_distance(x0, x1, y0, y1):
+    return sqrt(pow(x1-x0, 2) + pow(y1-y0, 2))
     
 
 def calculate_distance_point_line(x0, x1, y0, y1, px, py):
     return abs((x1-x0)*(y0-py) - (x0-px)*(y1-y0))/sqrt(pow((x1-x0), 2) + pow((y1-y0), 2))
+
 
 def plot_sus(lis, base = None, marker = ',', alti_group: bool = False):
     #lis = a list of Vertex and Edge objects
