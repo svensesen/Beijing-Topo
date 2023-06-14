@@ -62,11 +62,32 @@ class Graph:
 
                 self.vertices = self.vertices.difference(to_combine)
     
-    def merge_vertices_to_edges(self):
-        for cur_vertex in self.vertices:
-            if 
+    def merge_vertices_to_edges(self, max_distance = 0.0001):
+        queue = deque(self.edges)
+        while len(queue) != 0:
+            cur_edge = queue.popleft()
+            for cur_vertex in self.vertices:
+                if cur_vertex.short_distance_to_edge(cur_edge) >= max_distance:
 
+                    # Create the new edges
+                    new_edge1 = Edge(cur_vertex, min(cur_edge.vertices))
+                    new_edge2 = Edge(cur_vertex, max(cur_edge.vertices))
+                    cur_edge.remove_vertices(cur_edge.vertices)
 
+                    # If we now have edges connected between the same vertices remove them
+                    for sub_edge in cur_vertex.edges:
+                        if ((sub_edge.vertices == new_edge1.vertices) and (sub_edge.id != new_edge1.id)) or \
+                            ((sub_edge.vertices == new_edge2.vertices) and (sub_edge.id != new_edge2.id)):    
+                            
+                            if sub_edge in queue:
+                                queue.remove(sub_edge)
+                            
+                            sub_edge.remove_vertices(cur_edge.vertices)
+                        
+                    # Add the new edges to the queue
+                    queue.append(new_edge1)
+                    queue.append(new_edge2)
+                    break
     
     def add_vertices(self, vertices, called = False):
         if not isinstance(vertices, set):
