@@ -3,6 +3,7 @@ from warnings import warn
 from math import atan2, pi, sin, cos, sqrt, pow, degrees
 from collections import deque
 import matplotlib.pyplot as plt
+from random import randint #for hash issues
 
 import pickle
 
@@ -11,8 +12,9 @@ vertex_counter = 0
 edge_counter = 0
 
 class Graph:
-    def __init__(self, warnings = False):
-        global graph_counter
+    global graph_counter #added by rav
+    def __init__(self, graph_counter=graph_counter, warnings = False): #added by rav
+        #global graph_counter #commented out by rav
         self.id = graph_counter
         graph_counter += 1
 
@@ -62,9 +64,9 @@ class Graph:
 
                 self.vertices = self.vertices.difference(to_combine)
     
-    def merge_vertices_to_edges(self):
-        for cur_vertex in self.vertices:
-            if 
+#     def merge_vertices_to_edges(self):
+#         for cur_vertex in self.vertices:
+#             if 
 
 
     
@@ -157,8 +159,8 @@ class Graph:
 
     
 class Vertex:
-    def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False):
-        global vertex_counter
+    global vertex_counter
+    def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False, vertex_counter=vertex_counter):
         self.id = vertex_counter
         vertex_counter += 1
 
@@ -181,7 +183,10 @@ class Vertex:
         return f"<Vertex: {self.latitude},{self.longitude},{self.altitude}>"
     
     def __hash__(self):
-        return self.id
+        try:
+            return self.id
+        except AttributeError:
+            return randint(0, 100000)
     
     def __eq__(self, other):
         return self.id == other.id
@@ -316,8 +321,8 @@ class Vertex:
                                              self.latitude, self.longitude)
 
 class Edge:
-    def __init__(self, vertices = None, warnings = False):
-        global edge_counter
+    global edge_counter
+    def __init__(self, vertices = None, warnings = False, edge_counter=edge_counter):
         self.id = edge_counter
         edge_counter += 1
 
@@ -340,7 +345,10 @@ class Edge:
             return f"<Edge: ({min(self.vertices)}) -> ({max(self.vertices)})>"
     
     def __hash__(self):
-        return self.id
+        try:
+            return self.id
+        except:
+            return randint(0, 100000)
         
     def add_vertices(self, vertices, called = False):
         if not isinstance(vertices, set):
