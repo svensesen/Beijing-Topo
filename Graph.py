@@ -11,6 +11,9 @@ graph_counter = 0
 vertex_counter = 0
 edge_counter = 0
 
+all_vertices = []
+all_edges = []
+
 class Graph:
     global graph_counter #added by rav
     def __init__(self, graph_counter=graph_counter, warnings = False): #added by rav
@@ -23,22 +26,26 @@ class Graph:
         self.vertices = set()
         self.edges = set()
 
+        self.name = None
+
     def __repr__(self):
-        return "<Graph>"
+        if self.name != None:
+            return f"<Graph {self.name}>"
+        else:
+            return "<Graph>"
     
     def __hash__(self):
         return self.id
     
     def combine_graph(self, graph):
-        self.vertices.update(graph.vertices)
-        self.edges.update(graph.edges)
+        self.add_vertices(graph.vertices)
 
     def merge_close_vertices(self, max_distance = 0.0001):
         queue = deque(self.vertices)
 
         # For each vertex we check
         while len(queue) != 0:
-            cur_vertex = queue.popleft()
+            cur_vertex = queue.pop()
             to_combine = set()
 
             # For each other vertex check if it is close
@@ -50,24 +57,71 @@ class Graph:
             
             # If there were close vertices combine them
             if len(to_combine) > 0:
-                latitudes = [vertex.latitude for vertex in to_combine] + [vertex.latitude]
-                longitudes = [vertex.longitude for vertex in to_combine] + [vertex.longitude]
+                latitudes = [vertex.latitude for vertex in to_combine] + [cur_vertex.latitude]
+                longitudes = [vertex.longitude for vertex in to_combine] + [cur_vertex.longitude]
 
                 cur_vertex.latitude = sum(latitudes)/len(latitudes)
                 cur_vertex.longitude = sum(longitudes)/len(longitudes)
 
+                # If the edge is double remove it, else recombine it
+                inner_combine = (to_combine | {cur_vertex})
                 for vertex in to_combine: 
                     for edge in vertex.edges:
-                        edge.remove_vertices(vertex)
-                        edge.add_vertices(cur_vertex)
-                    queue.remove(vertex)
+                        if (min(edge.vertices) in inner_combine) and (max(edge.vertices) in inner_combine):
+                            edge.remove_vertices(edge.vertices)
+                        
+                        else:
+                            edge.remove_vertices(vertex)
+                            edge.add_vertices(cur_vertex)
+                    
+                    if vertex in queue:
+                        queue.remove(vertex)
 
-                self.vertices = self.vertices.difference(to_combine)
+                self.remove_vertices(to_combine)
     
-#     def merge_vertices_to_edges(self):
-#         for cur_vertex in self.vertices:
-#             if 
 
+    def merge_vertices_to_edges(self, max_distance = 0.0001):
+        queue = deque(self.edges)
+        queue_lengths = [-1]*50
+        while len(queue) != 0:
+            
+            # Checks if we are stuck in a loop
+            length_queue = len(queue)
+            queue_lengths.append(length_queue)
+            queue_lengths.pop()
+            if queue_lengths.count(queue_lengths[0]) == len(queue_lengths):
+                break
+
+            cur_edge = queue.popleft()
+            for cur_vertex in self.vertices:
+                if (cur_vertex.short_distance_to_edge(cur_edge) <= max_distance) and (cur_vertex not in cur_edge.vertices):
+                    
+                    # Create the new edges (after checking if they will be double edges)
+                    pass_creation = False
+                    for edge in cur_vertex.edges:
+                        if edge.vertices == {cur_vertex, min(cur_edge.vertices)}:
+                            pass_creation = True
+                            new_edge1 = edge
+                            break
+
+                    if not pass_creation:
+                        new_edge1 = Edge([cur_vertex, min(cur_edge.vertices)])
+                        queue.append(new_edge1)
+
+                    pass_creation = False
+                    for edge in cur_vertex.edges:
+                        if edge.vertices == {cur_vertex, max(cur_edge.vertices)}:
+                            pass_creation = True
+                            new_edge2 = edge
+                            break
+                    
+                    if not pass_creation:
+                        new_edge2 = Edge([cur_vertex, max(cur_edge.vertices)])
+                        queue.append(new_edge2)
+
+                    cur_edge.remove_vertices(cur_edge.vertices)
+                        
+                    break
 
     
     def add_vertices(self, vertices, called = False):
@@ -91,7 +145,8 @@ class Graph:
                 self.edges.add(edge)
         
         if not called:
-            vertex.set_graph(self, called = True)
+            for vertex in vertices:
+                vertex.set_graph(self, called = True)
     
     def remove_vertices(self, vertices, called = False):
         if not isinstance(vertices, set):
@@ -115,12 +170,13 @@ class Graph:
                     self.edges.remove(edge)
         
         if not called:
-            vertex.set_graph(None, called = True)
+            for vertex in vertices:
+                vertex.set_graph(None, called = True)
 
     def closest_vertex_to_point(self, latitude, longitude):        
         closest_vertex = None
         closest_distance = float("inf")
-        for vertex in self.graph.vertices:
+        for vertex in self.vertices:
             distance = vertex.distance_to_point(latitude, longitude)
 
             if distance < closest_distance:
@@ -163,6 +219,9 @@ class Vertex:
     def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False, vertex_counter=vertex_counter):
         self.id = vertex_counter
         vertex_counter += 1
+
+        global all_vertices
+        all_vertices.append(self)
 
         self.warnings = warnings
 
@@ -245,17 +304,15 @@ class Vertex:
 
         self.edges = self.edges.difference(edges)
 
-        if self.graph != None:
-            self.graph._remove_edges(edges)
-        
         if not called:
             for edge in edges:
                 edge.remove_vertices(self, called = True)
-    
-        for edge in self.edges:
-            if not edge.vertices:
+
+        for edge in edges:
+            if len(edge.vertices) == 0:
                 edge._set_graph(None)
-    
+                self.graph._remove_edges({edge})
+            
     def set_graph(self, graph, called = False):
         if (not isinstance(graph, Graph)) and (graph != None):
             raise TypeError(f"A graph must be a Graph or None, got {type(graph)}")
@@ -313,18 +370,21 @@ class Vertex:
 
     def short_distance_to_edge(self, edge):
         if len(edge.vertices) != 2:
-            return -1
+            return 999
         
         v0 = min(edge.vertices)
         v1 = max(edge.vertices)
-        return calculate_distance_point_line(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
-                                             self.latitude, self.longitude)
+        return calculate_distance_point_line_segment(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
+                                                     self.latitude, self.longitude)
 
 class Edge:
     global edge_counter
     def __init__(self, vertices = None, warnings = False, edge_counter=edge_counter):
         self.id = edge_counter
         edge_counter += 1
+
+        global all_edges
+        all_edges.append(self)
 
         self.warnings = warnings
 
@@ -384,9 +444,6 @@ class Edge:
             if not isinstance(value, Vertex):
                 raise TypeError(f"Input for vertices contained a non-Vertex, namely {type(value)}")
         
-        if len(vertices) != 2:
-            raise ValueError(f"An edge may have at most 2 vertices, has {len(self.vertices)}, adding {len(vertices)}")
-        
         if self.warnings and not vertices.issubset(self.vertices):
             warn("Attempting to remove vertices from the edge that are not there")
 
@@ -394,19 +451,19 @@ class Edge:
 
         if not called:
             for vertex in vertices:
-                vertex.remove_edges(set(self), called = True)
+                vertex.remove_edges({self}, called = True)
     
     def _set_graph(self, graph):
         self.graph = graph
 
     def short_distance_to_vertex(self, vertex):
         if len(self.vertices) != 2:
-            return -1
+            return 999
 
         v0 = min(self.vertices)
         v1 = max(self.vertices)
-        return calculate_distance_point_line(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
-                                             vertex.latitude, vertex.longitude)
+        return calculate_distance_point_line_segment(v0.latitude, v1.latitude, v0.longitude, v1.longitude,\
+                                                     vertex.latitude, vertex.longitude)
 
     @property
     def length(self):
@@ -466,6 +523,42 @@ def short_distance(x0, x1, y0, y1):
 
 def calculate_distance_point_line(x0, x1, y0, y1, px, py):
     return abs((x1-x0)*(y0-py) - (x0-px)*(y1-y0))/sqrt(pow((x1-x0), 2) + pow((y1-y0), 2))
+
+# Function mostly generated by chatgpt cuz I couldn't be bothered
+def calculate_distance_point_line_segment(x0, x1, y0, y1, px, py):
+
+    # Calculate the length of the line segment
+    segment_length = sqrt((x1 - x0)**2 + (y1 - y0)**2)
+
+    # Calculate the dot product
+    dot_product = ((px - x0) * (x1 - x0)) + ((py - y0) * (y1 - y0))
+
+    if dot_product <= 0:
+        # point3 is closer to point1, use distance formula between point3 and point1
+        distance = sqrt((px - x0)**2 + (py - y0)**2)
+    elif dot_product >= segment_length**2:
+        # point3 is closer to point2, use distance formula between point3 and point2
+        distance = sqrt((px - x1)**2 + (py - y1)**2)
+    else:
+        # point3 is within the line segment, calculate perpendicular distance
+        # projection = dot_product / segment_length**2
+        # projection_x = x0 + (projection * (x1 - x0))
+        # projection_y = y0 + (projection * (y1 - y0))
+        # distance = sqrt((2 - projection_x)**2 + (py - projection_y)**2)
+        distance = abs((x1-x0)*(y0-py) - (x0-px)*(y1-y0))/sqrt(pow((x1-x0), 2) + pow((y1-y0), 2))
+
+    return distance
+
+def garbage_collection():
+    for edge in all_edges:
+        if edge.graph == None:
+            all_edges.remove(edge)
+            del edge
+    
+    for vertex in all_vertices:
+        if vertex.graph == None:
+            all_vertices.remove(vertex)
+            del vertex
 
 
 def plot_sus(lis, base = None, marker = ',', alti_group: bool = False):
