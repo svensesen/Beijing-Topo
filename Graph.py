@@ -15,9 +15,8 @@ all_vertices = []
 all_edges = []
 
 class Graph:
-    global graph_counter #added by rav
-    def __init__(self, graph_counter=graph_counter, warnings = False): #added by rav
-        #global graph_counter #commented out by rav
+    def __init__(self, warnings = False):
+        global graph_counter
         self.id = graph_counter
         graph_counter += 1
 
@@ -215,8 +214,8 @@ class Graph:
 
     
 class Vertex:
-    global vertex_counter
-    def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False, vertex_counter=vertex_counter):
+    def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False):
+        global vertex_counter
         self.id = vertex_counter
         vertex_counter += 1
 
@@ -378,8 +377,8 @@ class Vertex:
                                                      self.latitude, self.longitude)
 
 class Edge:
-    global edge_counter
-    def __init__(self, vertices = None, warnings = False, edge_counter=edge_counter):
+    def __init__(self, vertices = None, warnings = False):
+        global edge_counter
         self.id = edge_counter
         edge_counter += 1
 
