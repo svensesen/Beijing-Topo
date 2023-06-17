@@ -79,7 +79,11 @@ class Graph:
 
                 self.remove_vertices(to_combine)
     
-
+<<<<<<< HEAD
+#     def merge_vertices_to_edges(self):
+#         for cur_vertex in self.vertices:
+#             if 
+=======
     def merge_vertices_to_edges(self, max_distance = 0.0001):
         queue = deque(self.edges)
         queue_lengths = [-1]*50
@@ -91,6 +95,7 @@ class Graph:
             queue_lengths.pop()
             if queue_lengths.count(queue_lengths[0]) == len(queue_lengths):
                 break
+>>>>>>> 6a99e8265f7a77c82d0712b9cf458d04bf08337a
 
             cur_edge = queue.popleft()
             for cur_vertex in self.vertices:
