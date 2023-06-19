@@ -198,6 +198,12 @@ class Graph:
                 found_vertices.add(vertex)
         
         return found_vertices
+    
+    def are_connected(self, v1, v2):
+        for edge in v1.edges:
+            if v2 in edge.vertices:
+                return True
+        return False
 
     def _add_edges(self, edges):
         self.edges.update(edges)
