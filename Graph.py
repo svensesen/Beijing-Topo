@@ -1,7 +1,7 @@
 # Note each function starting with _ should NOT be manually invoked
 from warnings import warn
 from math import atan2, pi, sin, cos, sqrt, pow, degrees
-from collections import deque
+from collections import deque, Counter
 import matplotlib.pyplot as plt
 from random import randint #for hash issues
 
@@ -39,6 +39,70 @@ class Graph:
     def combine_graph(self, graph):
         self.add_vertices(graph.vertices)
 
+    # Part 1 of the graph simplification
+    def simplify_double_edges(self):
+        '''if there are 2 edges within a pair of vertices, leave only 1
+        This is possible due to perhaps multiple edge objects (of different IDs) connecting the same Vertices
+        Also fixes broken edges'''
+    
+        unique_vertex_connections = []
+        edges_ids_to_be_deleted = []
+
+        for edge in self.edges:
+            #Not broken edge (2 endpoints)
+            pair = (list(edge.vertices)[0].id, list(edge.vertices)[1].id)
+
+            if pair not in unique_vertex_connections:
+                unique_vertex_connections.append(pair)
+            else:
+                edges_ids_to_be_deleted.append(edge.id)
+        
+        edges_to_be_removed = [edge for edge in self.edges if edge.id in edges_ids_to_be_deleted]
+        for edge in edges_to_be_removed:
+            edge.remove_vertices(edge.vertices)
+
+    # Part 2 of the graph simplification
+    def delete_chain_vertices(self, threshold = 15): #0.001):
+        # 1) for every vertex:
+        for vertex in self.vertices:
+        
+        # 2) if vertex has precisely 2 edges:
+            if len(vertex.edges) == 2:
+                edges = list(vertex.edges)
+                
+                # 3) if their angles are matching (below some threshold):
+                if abs(list(vertex.edges)[0].angle % 180 - list(vertex.edges)[1].angle % 180) < threshold:
+                    
+                    # 4) Find all vertices this chain connects
+                    #That means, we'll get the outer vertices twice and the middle vertex once
+                    all_vertices = list(edges[0].vertices) + list(edges[1].vertices)
+                    
+                    # 5) Sometime, due to completely fucked up errors, we will still encounter double edges instead of chains
+                    # This is why we use the Counter (histogram) to check for that cases
+                    counter = Counter(all_vertices)
+                    
+                    # 6) To refer to the outer vertices, check which appear in the Counter once (middle will be twice)
+                    outer_vertices = [out for out in counter if counter[out] == 1]
+                    
+                    # 7) If there are no outer vertices, we have found a redundant edge. Hence, remove any edge of the two:
+                    if len(outer_vertices) == 0:
+                        edges[0].remove_vertices(edges[0].vertices)
+                    
+                    # 8) In case this is indeed a chain:
+                    else:
+                        # 9) join the other 2 vertices using an edge
+                        Edge(outer_vertices)
+
+                        # 10) remove the now redundant edges
+                        for edge in vertex.edges:
+                            edge.remove_vertices(edge.vertices)
+                                                     
+                        # 11) remove the middle vertex
+                        self.remove_vertices(vertex)
+
+
+
+    # Part 3 of the graph simplification
     def merge_close_vertices(self, max_distance = 0.0001):
         queue = deque(self.vertices)
 
@@ -78,7 +142,7 @@ class Graph:
 
                 self.remove_vertices(to_combine)
     
-
+# The graph merging
     def merge_vertices_to_edges(self, max_distance = 0.0001):
         queue = deque(self.edges)
         queue_lengths = [-1]*50

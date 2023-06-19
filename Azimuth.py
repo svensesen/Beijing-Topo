@@ -49,6 +49,10 @@ def create_azimuth_graph(df, max_angle_change = 45, method = 3,
         cur_altitude = df.iloc[i, 2]
         
         last_distance = sqrt(pow(last_latitude-cur_latitude, 2) + pow(last_longitude-cur_longitude,2))
+
+        # If the same coordinate is repeated
+        if last_distance == 0:
+           pass
         
         # If the last iteration noticed a skip, create a new start
         if skip_next == True:
@@ -75,12 +79,12 @@ def create_azimuth_graph(df, max_angle_change = 45, method = 3,
             if method == 1:
                 last_angle = calculate_angle(last_latitude, cur_latitude, last_longitude, cur_longitude)
 
-                condition = ((abs(compare_last_angle-last_angle) + 180) % 360 - 180) > max_angle_change
+                condition = abs((abs(compare_last_angle-last_angle) + 180) % 360 - 180) > max_angle_change
 
             elif method == 2:
                 start_angle = calculate_angle(start_latitude, cur_latitude, start_longitude, cur_longitude)
                 
-                condition = ((abs(compare_start_angle-start_angle) + 180) % 360 - 180) > max_angle_change
+                condition = abs((abs(compare_start_angle-start_angle) + 180) % 360 - 180) > max_angle_change
 
             elif method == 3:
                 start_angle = calculate_angle(start_latitude, cur_latitude, start_longitude, cur_longitude)
@@ -88,25 +92,25 @@ def create_azimuth_graph(df, max_angle_change = 45, method = 3,
                 start_distance = sqrt(pow(start_latitude-cur_latitude, 2) + pow(start_longitude-cur_longitude,2))
                 max_angle = max(max_angle_change*mean_distance/start_distance, max_angle_change_min)
                 
-                condition = ((abs(compare_start_angle-start_angle) + 180) % 360 - 180) > max_angle
+                condition = abs((abs(compare_start_angle-start_angle) + 180) % 360 - 180) > max_angle
             
             elif method == 4:
                 last_angle = calculate_angle(last_latitude, cur_latitude, last_longitude, cur_longitude)
                 start_angle = calculate_angle(start_latitude, cur_latitude, start_longitude, cur_longitude)
                 
-                condition = (((abs(compare_last_angle-last_angle) + 180) % 360 - 180) > max_angle_change)\
-                or (((abs(compare_start_angle-start_angle) + 180) % 360 - 180) > max_angle_change)
+                condition = (abs((abs(compare_last_angle-last_angle) + 180) % 360 - 180) > max_angle_change)\
+                or (abs((abs(compare_start_angle-start_angle) + 180) % 360 - 180) > max_angle_change)
             
             # Create new vertex if the angle is too different
             if condition:
                 new_vertex = Vertex(last_latitude, last_longitude, last_altitude, graph)
                 Edge([start_vertex, new_vertex])
-                
+
                 try: compare_last_angle = last_angle
-                except:continue
+                except:pass
                     
                 try: compare_start_angle = start_angle
-                except: continue
+                except: pass
 
                 start_vertex = new_vertex
 
