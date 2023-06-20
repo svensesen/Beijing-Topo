@@ -279,7 +279,7 @@ class Graph:
     def remove_unconnected_vertices(self):
         self.vertices = {vertex for vertex in self.vertices if len(vertex.edges) != 0}
         
-    def save(self, filename: str): #works, but not loading yet
+    def save(self, filename: str): #works
         with open(filename, 'wb') as outp:
             pickle.dump(self, outp, -1)
 
