@@ -142,7 +142,7 @@ class Graph:
 
                 self.remove_vertices(to_combine)
     
-# The graph merging
+    # The graph merging
     def merge_vertices_to_edges(self, max_distance = 0.0001):
         queue = deque(self.edges)
         queue_lengths = [-1]*50
@@ -182,6 +182,7 @@ class Graph:
                         new_edge2 = Edge([cur_vertex, max(cur_edge.vertices)])
                         queue.append(new_edge2)
 
+                    # Remove the edge which is combined with
                     cur_edge.remove_vertices(cur_edge.vertices)
                         
                     break
