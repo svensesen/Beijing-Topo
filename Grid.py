@@ -1,6 +1,7 @@
 #Cell and Grid classes for dividing up the city into a grid
 CITY_BORDERS = [40.19, 39.65, 115.98, 116.74]
 from Graph import *
+from collections import Counter
 
 class Cell():
     '''Just your regular Square kind of a class'''
@@ -19,12 +20,6 @@ class Cell():
     def belongs(self, latitude: float, longitude: float):
         '''checks if a point belongs to the cell - pass the point as (y, x)'''
         return (latitude > self.bottom and latitude <= self.top and longitude < self.right and longitude >= self.left)
-    
-    def vertexize(self, threshold = 600):
-        '''makes the Cell become a vertex if has more locations that threshold'''
-        
-        if self.number_of_locations > threshold:
-            self.is_vertex = True
 
     
 
@@ -65,17 +60,23 @@ class Grid():
                     
                     
     def feed_list_of_cell_numbers(self, cell_numbers: list):
-        '''for each cell number in the list, update the corresponding cell details'''
+        '''for each cell number in the list, update the corresponding cell details
+        cell_numbers can also be a Pandas Series'''
         
-        for number in cell_numbers:
-            self.cell_list[int(number)].number_of_locations += 1
+        # A histogram of how many times was each cell number present:
+        c = Counter(cell_numbers)
+        
+        # For each cell number, increase its number of locations by as much as the histogram value:
+        for key in c:
+            self.cell_list[key].number_of_locations += c[key]
             
     
     def vertexize(self, threshold):
-        '''runs vertexize on each sell of the grid'''
+        '''Compares the number of GPS locations in each cell with the threshold and flips the is_vertex flags is needed'''
         
         for cell in self.cell_list:
-            cell.vertexize(threshold)
+            if cell.number_of_locations > threshold:
+                cell.is_vertex = True
             
     def get_list_of_vertices(self) -> list:
         '''returns the numbers of all cells that are vertices (is_vertex() == True)'''
@@ -113,7 +114,7 @@ def find_subsequent_vertex_pairs(df_grouped, grid) -> dict:
         if len(element)>1:
             
             #If the person went from a vertex to a vertex and not just ANY cell:
-            if grid.cell_list[int(element[0])].is_vertex and grid.cell_list[int(element[1])].is_vertex:
+            if grid.cell_list[int(element[0])].is_vertex and grid.cell_list[int(element[-1])].is_vertex:
                 
                 #Get all pairs of subsequent vertices
                 list_of_pairs = [(int(element[i]), int(element[i+1])) for i in range(len(element)-1)]
