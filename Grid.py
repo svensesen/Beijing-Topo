@@ -84,30 +84,20 @@ class Grid():
         
         
         
-        
-def latitude_to_row(latitude: float, latitude_cells_number: int, 
+def latitude_to_cell_nr(latitude: float, longitude_cells_nr: int, 
                     latitude_cell_length: float, CITY_BORDERS=CITY_BORDERS):
     '''For a given latitude in the row of a datafame, checks which row number in the grid the point belongs to'''
     
-    for i in range(latitude_cells_number):
-        if latitude < CITY_BORDERS[1] + i*latitude_cell_length: #we do not have to check the other containment!
-            return i
+    #position - offset, divided by cell length, all times the number of cells in a row (not column!)
+    return int(((latitude-CITY_BORDERS[1])//latitude_cell_length)*longitude_cells_nr)
     
 
-def longitude_to_column(longitude: float, longitude_cells_number: int, 
-                        longitude_cell_length: float, CITY_BORDERS=CITY_BORDERS):
+def longitude_to_cell_nr(longitude: float, longitude_cell_length: float, CITY_BORDERS=CITY_BORDERS):
     '''For a given longitude in the row of a datafame, checks which column number in the grid the point belongs to'''
     
-    for i in range(longitude_cells_number):
-        if longitude < CITY_BORDERS[2] + i*longitude_cell_length: #we do not have to check the other containment!
-            return i
+    #position - offset, divided by cell length
+    return int((longitude-CITY_BORDERS[2])//longitude_cell_length)
         
-
-def row_column_to_cell_number(row_nr: int, column_nr: int, longitude_cells_nr: int):
-    '''given the x and y in the grid, calculates the cell number'''
-    
-    return row_nr*longitude_cells_nr + column_nr
-# lambda x,y,z: x*y+z
 
 
 def find_subsequent_vertex_pairs(df_grouped, grid) -> dict:
