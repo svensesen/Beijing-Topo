@@ -142,6 +142,13 @@ def rav_graph_to_sven_graph_2(grid, edges):
         v = Vertex(latitude=grid.cell_list[ID].top, longitude=grid.cell_list[ID].left, altitude=100)
         v.id = ID
         g.add_vertices(v)
+        
+#     vertex_list = [Vertex(latitude=grid.cell_list[ID].top, longitude=grid.cell_list[ID].left, altitude=100) for ID in vertex_ids]
+#     list(map(lambda x: x.id=, vertex_list))
+
+    # The following is the fastest way to solve this, but for some reason returns some errors:
+#     g.add_vertices([Vertex(latitude=grid.cell_list[vertex_id].top, longitude=grid.cell_list[vertex_id].left, \
+#                            altitude=100, ID=vertex_id) for vertex_id in vertex_ids])
 
     #Create all Edge objects - they will have the vertices added (and vertices will have edges added):
     for pair in edges:
