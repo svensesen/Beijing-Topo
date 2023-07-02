@@ -285,10 +285,12 @@ class Graph:
 
     
 class Vertex:
-    def __init__(self, latitude, longitude, altitude, graph = None, edges = None, warnings = False):
-        global vertex_counter
-        self.id = vertex_counter
-        vertex_counter += 1
+    def __init__(self, latitude, longitude, altitude, ID = None, graph = None, edges = None, warnings = False):
+        
+        if ID is None:
+            global vertex_counter
+            self.id = vertex_counter
+            vertex_counter += 1
 
         global all_vertices
         all_vertices.append(self)

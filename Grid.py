@@ -142,22 +142,16 @@ def rav_graph_to_sven_graph_2(grid, edges):
         v = Vertex(latitude=grid.cell_list[ID].top, longitude=grid.cell_list[ID].left, altitude=100)
         v.id = ID
         g.add_vertices(v)
-    
-    #return g
 
     #Create all Edge objects - they will have the vertices added (and vertices will have edges added):
     for pair in edges:
         #v1 is the Vertex such that Vertex.ID = pair[0], same for v2
         try:
             v1, v2 = [v for v in g.vertices if v.id == pair[0]][0], [v for v in g.vertices if v.id == pair[1]][0]
+            #Adding vertices to edges:
+            e = Edge(vertices=set( (v1, v2) ) )
         except:
             print("broken pair: ", pair)
         
-        #Adding vertices to edges:
-        e = Edge(vertices=set( (v1, v2) ) )
-        
-#         #Adding edges to vertices: #AT THIS POINT I ASSUME GRAPH GOT UPDATED BY THE EDGES TOO?
-#         v1.add_edges(e)
-#         v2.add_edges(e)
-            
+    #AT THIS POINT I ASSUME GRAPH GOT UPDATED BY THE EDGES TOO
     return g
